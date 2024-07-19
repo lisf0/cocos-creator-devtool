@@ -30,6 +30,61 @@ export default function () {
       'angle', 'eulerAngles',
       'scale', 'scaleX', 'scaleY',
       // 'skewX', 'skewY'
+    ],
+    '3.x': [  //实际测试版本为3.6.2
+      //identity
+      'name',
+      'active',
+      'uuid',
+      //position, dimesion
+      { key: 'x', get: (n) => n.position.x, set: (n, v) => n.setPosition(cc.v3(v, n.position.y, n.position.z)) },
+      { key: 'y', get: (n) => n.position.y, set: (n, v) => n.setPosition(cc.v3(n.position.x, v, n.position.z)) },
+      { key: 'z', get: (n) => n.position.z, set: (n, v) => n.setPosition(cc.v3(n.position.x, n.position.y, v)) },
+      'angle', 'eulerAngles',
+      // { key: 'rotationX', get: (n) => n.rotation.x, set: (n, v) => n.setRotation(cc.v4(v, n.rotation.y, n.rotation.z, n.rotation.w)) },
+      // { key: 'rotationY', get: (n) => n.rotation.y, set: (n, v) => n.setRotation(cc.v4(n.rotation.x, v, n.rotation.z, n.rotation.w)) },
+      // { key: 'rotationZ', get: (n) => n.rotation.z, set: (n, v) => n.setRotation(cc.v4(n.rotation.x, n.rotation.y, v, n.rotation.w)) },
+      { key: 'scaleX', get: (n) => n.scale.x, set: (n, v) => n.setScale(cc.v3(v, n.scale.y, n.scale.z)) },
+      { key: 'scaleY', get: (n) => n.scale.y, set: (n, v) => n.setScale(cc.v3(n.scale.x, v, n.scale.z)) },
+      { key: 'scaleZ', get: (n) => n.scale.z, set: (n, v) => n.setScale(cc.v3(n.scale.x, n.scale.y, v)) },
+      {
+        key: 'width',
+        get: (n) => n.getComponent(cc.UITransformComponent) ? n.getComponent(cc.UITransformComponent).width : 0,
+        set: (n, v) => n.getComponent(cc.UITransformComponent) && (n.getComponent(cc.UITransformComponent).width = v)
+      },
+      {
+        key: 'height',
+        get: (n) => n.getComponent(cc.UITransformComponent) ? n.getComponent(cc.UITransformComponent).height : 0,
+        set: (n, v) => n.getComponent(cc.UITransformComponent) && (n.getComponent(cc.UITransformComponent).height = v)
+      },
+      {
+        key: 'anchorX',
+        get: (n) => n.getComponent(cc.UITransformComponent) ? n.getComponent(cc.UITransformComponent).anchorX : 0,
+        set: (n, v) => n.getComponent(cc.UITransformComponent) && (n.getComponent(cc.UITransformComponent).anchorX = v)
+
+      },
+      {
+        key: 'anchorY',
+        get: (n) => n.getComponent(cc.UITransformComponent) ? n.getComponent(cc.UITransformComponent).anchorY : 0,
+        set: (n, v) => n.getComponent(cc.UITransformComponent) && (n.getComponent(cc.UITransformComponent).anchorY = v)
+      },
+      {
+        key: 'color',
+        get: (n) => n.getComponent("cc.UIRenderer") ? n.getComponent("cc.UIRenderer").color : cc.Color.WHITE,
+        set: (n, v) => n.getComponent("cc.UIRenderer") && (n.getComponent("cc.UIRenderer").color = v)
+      },
+      {
+        key: 'opacity',
+        get: (n) => n.getComponent("cc.UIRenderer") ? n.getComponent("cc.UIRenderer").color.a : 255,
+        set: (n, v) => {
+          let rander = n.getComponent("cc.UIRenderer");
+          if (rander) {
+            let color = rander.color.clone();
+            color.a = v;
+            rander.color = color;
+          }
+        }
+      },
     ]
   };
 
@@ -65,11 +120,24 @@ export default function () {
   const ccdevtool = window.ccdevtool = {
     nodeId: 1,
     NodesCacheData,
+
+    getProps() {
+      let propkey = "default";
+      if (cc.ENGINE_VERSION >= '2.0.0') {
+        propkey = '2.0.0';
+      }
+      if (cc.ENGINE_VERSION >= '3.0.0') {
+        propkey = '3.x';
+      }
+
+      return SerializeProps[propkey];
+    },
+
     /**
      * Load tree node data
      * @return {Object} node data in JSON
      */
-    getTreeNodes () {
+    getTreeNodes() {
       const scene = cc.director.getScene();
       var ret = [];
       const bak = cc.error;
@@ -95,10 +163,10 @@ export default function () {
      * @param  {String} type, all type are prefixed with ':'
      * @param  {any} data
      */
-    postMessage (type, data) {
-      window.postMessage({type, data}, '*');
+    postMessage(type, data) {
+      window.postMessage({ type, data }, '*');
     },
-    hasElement (selector) {
+    hasElement(selector) {
       return !!document.querySelector(selector);
     },
     /**
@@ -106,7 +174,7 @@ export default function () {
      * @param  {String} selector
      * @param  {Boolean} val, true fro show, false for hide
      */
-    toggleElement (selector, val) {
+    toggleElement(selector, val) {
       var ele = document.querySelector(selector);
       if (!ele) return false;
       ele.style.display = val ? '' : 'none';
@@ -116,20 +184,20 @@ export default function () {
      * @param  {String} selector
      * @param  {Boolean} val, true fro show, false for hide
      */
-    toggleNode (path, value) {
+    toggleNode(path, value) {
       const node = cc.find(path);
       if (node) node.active = !!value;
     },
     /**
      * Hide debugging div
      */
-    hideDebugLayer () {
+    hideDebugLayer() {
       this.toggleElement(`#${DebugLayerId}`, false);
     },
     /**
      * Create debugging div
      */
-    createDebugLayer () {
+    createDebugLayer() {
       var debugLayer = document.getElementById(DebugLayerId);
       if (debugLayer) {
         debugLayer.parentNode.removeChild(debugLayer);
@@ -158,7 +226,7 @@ export default function () {
      * @param  {cc.Node} n
      * @param  {Number} zIndex
      */
-    createDebugBox (n, zIndex) {
+    createDebugBox(n, zIndex) {
       const nodeInfo = NodesCacheData[n.uuid];
       if (!nodeInfo || !nodeInfo.box) return;
       var div = document.getElementById(n.uuid);
@@ -200,7 +268,7 @@ export default function () {
      * Set helper variable $n0, $n1
      * @param  {String} uuid, uuid of node
      */
-    selectNode (uuid) {
+    selectNode(uuid) {
       window.$n1 = window.$n0
       window.$n0 = NodesCache[uuid];
 
@@ -217,7 +285,8 @@ export default function () {
      * @param  {String} key, property name
      * @param  {any} value, property value
      */
-    updateNode (uuid, key, value) {
+    updateNode(uuid, key, value) {
+      const props = this.getProps();
       const node = NodesCache[uuid];
       const nodeInfo = NodesCacheData[uuid];
       if (!node || !nodeInfo) return;
@@ -226,38 +295,54 @@ export default function () {
       if (key === 'color') {
         let comp = hexToRgb(value);
         if (comp) {
-          return node[key] = new cc.Color(comp.r, comp.g, comp.b);
+
+          if (props.indexOf(key) == -1) {
+            const prop = props.find(v => v.key == key);
+            if (prop) {
+              prop.set(node, new cc.Color(comp.r, comp.g, comp.b));
+            }
+          } else {
+            node[key] = new cc.Color(comp.r, comp.g, comp.b);
+          }
+          return
         }
       } else if (key === 'eulerAngles') {
         try {
-          let xyz = value.replace(/[()]/,'').split(', ').map(parseFloat);
+          let xyz = value.replace(/[()]/, '').split(', ').map(parseFloat);
           return node[key] = cc.v3.apply(cc.v3, xyz);
         } catch (e) {
           console.error(`Can not convert ${value} to cc.v3`);
         }
       }
-      node[key] = value;
+      if (props.indexOf(key) == -1) {
+        const prop = props.find(v => v.key == key);
+        if (prop) {
+          prop.set(node, value);
+        }
+      } else {
+        node[key] = value;
+      }
     },
     /**
      * Print comopnent in Console
      * @param  {String} uuid, uuid of node
      * @param  {Number} index, index of component
      */
-    inspectComponent (uuid, index) {
+    inspectComponent(uuid, index) {
       console.trace(window.$c = NodesCache[uuid]._components[index]);
     },
     /**
      * Print node in Console
      * @param  {String} uuid, uuid of a node
      */
-    inspectNode (uuid) {
+    inspectNode(uuid) {
       console.trace(window.$n = NodesCache[uuid]);
     },
-    reloadScene () {
+    reloadScene() {
       try {
         const s = cc.director.getScene();
         cc.director.loadScene(s.name);
-      } catch(e) {}
+      } catch (e) { }
     },
     /**
      * Serialize node info/props into plain objects
@@ -266,23 +351,44 @@ export default function () {
      * @return {Object}
      */
     serialize: function (n, zIndex = 0) {
-      const props = SerializeProps[cc.ENGINE_VERSION >= '2.0.0' ? '2.0.0' : 'default'];
-      const kv = props.reduce((result, key) => {
-        var value = n[key];
+
+      const props = this.getProps();
+      const kv = props.reduce((result, ikey) => {
+
+
+        var key = ikey.key || ikey;
+        var value = typeof ikey == 'object' ? ikey.get(n) : n[ikey];
         if (key === 'color') value = value.toCSS();
         if (key === 'eulerAngles') value = value.toString()
-        result.push({key, value});
+        result.push({ key, value });
         return result;
       }, []);
 
       // box for make debugging div box
       var box = null;
       if (n.parent) {
-        box = n.getBoundingBoxToWorld();
-        box.left = box.x / 2;
-        box.bottom = box.y / 2;
-        box.width = n.width / 2;
-        box.height = n.height / 2;
+
+        if (cc.ENGINE_VERSION >= '3.0.0') {
+          const tranCom = n.getComponent(cc.UITransformComponent);
+          if (tranCom) {
+            box = tranCom.getBoundingBoxToWorld();
+          }
+          if (box) {
+            box.left = box.x / 2;
+            box.bottom = box.y / 2;
+            box.width = tranCom.width / 2;
+            box.height = tranCom.height / 2;
+          }
+        } else {
+          box = n.getBoundingBoxToWorld();
+          if (box) {
+            box.left = box.x / 2;
+            box.bottom = box.y / 2;
+            box.width = n.width / 2;
+            box.height = n.height / 2;
+          }
+        }
+
       }
       /**
        * Cache node in some place other than NodesCacheData
@@ -339,59 +445,59 @@ export default function () {
     },
     onPositionChanged() {
       if (!(this instanceof cc.Node)) return;
-      const data = {uuid: this.uuid, x: this.x, y: this.y};
+      const data = { uuid: this.uuid, x: this.x, y: this.y };
       ccdevtool.postMessage('position-changed', data);
     },
     onSizeChanged() {
       if (!(this instanceof cc.Node)) return;
-      const data = {uuid: this.uuid, width: this.width, height: this.height};
+      const data = { uuid: this.uuid, width: this.width, height: this.height };
       ccdevtool.postMessage('size-changed', data);
     },
     onScaleChanged() {
       if (!(this instanceof cc.Node)) return;
-      const data = {uuid: this.uuid, scaleX: this.scaleX, scaleY: this.scaleY, scale: this.scale};
+      const data = { uuid: this.uuid, scaleX: this.scaleX, scaleY: this.scaleY, scale: this.scale };
       ccdevtool.postMessage('scale-changed', data);
     },
     onRotationChanged() {
       if (!(this instanceof cc.Node)) return;
-      const data = {uuid: this.uuid, rotationX: this.rotationX, rotationY: this.rotationY, rotation: this.rotation};
+      const data = { uuid: this.uuid, rotationX: this.rotationX, rotationY: this.rotationY, rotation: this.rotation };
       ccdevtool.postMessage('rotation-changed', data);
     },
     onColorChanged() {
       if (!(this instanceof cc.Node)) return;
-      const data = {uuid: this.uuid, color: this.color};
+      const data = { uuid: this.uuid, color: this.color };
       ccdevtool.postMessage('color-changed', data);
     },
     onAnchorChanged() {
       if (!(this instanceof cc.Node)) return;
-      const data = {uuid: this.uuid, anchorX: this.anchorX, anchorY: this.anchorY, anchor: this.anchor};
+      const data = { uuid: this.uuid, anchorX: this.anchorX, anchorY: this.anchorY, anchor: this.anchor };
       ccdevtool.postMessage('anchor-changed', data);
     },
     onActiveInHierarchyChanged() {
       if (!(this instanceof cc.Node)) return;
-      const data = {uuid: this.uuid, active: this.active};
+      const data = { uuid: this.uuid, active: this.active };
       ccdevtool.postMessage('active-in-hierarchy-changed', data);
     },
     onSiblingOrderChanged() {
       if (!(this instanceof cc.Node)) return;
-      const data = {uuid: this.uuid, zIndex: this.zIndex};
+      const data = { uuid: this.uuid, zIndex: this.zIndex };
       ccdevtool.postMessage('sibling-order-changed', data);
     },
     onOpacityChanged() {
       if (!(this instanceof cc.Node)) return;
-      const data = {uuid: this.uuid, opacity: this.opacity};
+      const data = { uuid: this.uuid, opacity: this.opacity };
       ccdevtool.postMessage('opacity-changed', data);
     },
     onChildRemoved(child) {
       if (!(child instanceof cc.Node)) return;
-      const data = {uuid: child.uuid};
+      const data = { uuid: child.uuid };
       ccdevtool.postMessage('child-removed', data);
     },
     onChildAdded(child) {
       if (!(child instanceof cc.Node)) return;
       const data = ccdevtool.serialize(child);
       const index = child.parent.children.findIndex(c => c === child);
-      ccdevtool.postMessage('child-added', {child: data, parentUuid: this.uuid, index: index});
+      ccdevtool.postMessage('child-added', { child: data, parentUuid: this.uuid, index: index });
     }
   };
 
@@ -411,24 +517,24 @@ export default function () {
       ccdevtool.postMessage('game_on_show');
     });
   }
-//    if (cc && cc.game && cc.game.run) {
-//      let run = cc.game.run;
-//      cc.game.run = function () {
-//        let ret =  run.apply(cc.game, arguments);
-//        let onProgress = cc.loader.onProgress;
-//        console.log('cc.game.run');
-//        debugger;
-//        cc.loader.onProgress = function (completedCount, totalCount, item) {
-//          debugger;
-//          console.log(`cc.loader.onProgress:${completedCount}/${totalCount}`);
-//          if (completedCount === totalCount) ccdevtool.postMessage(':loadComplete')
-//          return onProgress.apply(cc.loader, arguments);
-//        };
-//
-//        ccdevtool.postMessage(':gameStarted');
-//        return ret;
-//      };
-//    }
+  //    if (cc && cc.game && cc.game.run) {
+  //      let run = cc.game.run;
+  //      cc.game.run = function () {
+  //        let ret =  run.apply(cc.game, arguments);
+  //        let onProgress = cc.loader.onProgress;
+  //        console.log('cc.game.run');
+  //        debugger;
+  //        cc.loader.onProgress = function (completedCount, totalCount, item) {
+  //          debugger;
+  //          console.log(`cc.loader.onProgress:${completedCount}/${totalCount}`);
+  //          if (completedCount === totalCount) ccdevtool.postMessage(':loadComplete')
+  //          return onProgress.apply(cc.loader, arguments);
+  //        };
+  //
+  //        ccdevtool.postMessage(':gameStarted');
+  //        return ret;
+  //      };
+  //    }
 
 
   /**
@@ -448,14 +554,14 @@ export default function () {
    * @param  {cc.Node} n
    * @return {Array} array of property/value
    */
-  function getComponentsData (n) {
+  function getComponentsData(n) {
     const comps = n._components;
     return comps.reduce((result, comp, i) => {
       const props = comp.constructor.__props__.filter(prop => {
         return ignoredComponentProp.indexOf(prop) < 0 && prop[0] != '_';
       }).map(name => {
         const type = typeOf(comp[name]);
-        const ret = { name, type: type.component, rawType: type.raw};
+        const ret = { name, type: type.component, rawType: type.raw };
         cc.js.getset(ret, 'value', () => {
           return valueOf(comp[name]);
         }, (str) => {
@@ -483,15 +589,15 @@ export default function () {
   function hexToRgb(hex) {
     var comps = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
     return comps ? {
-        r: parseInt(comps[1], 16),
-        g: parseInt(comps[2], 16),
-        b: parseInt(comps[3], 16)
+      r: parseInt(comps[1], 16),
+      g: parseInt(comps[2], 16),
+      b: parseInt(comps[3], 16)
     } : null;
   }
 
   function rgba2color(str) {
     const vec = str.replace(/ /g, '')
-      .replace(/^rgba?/,'')
+      .replace(/^rgba?/, '')
     const comps = str2array(vec);
     return cc.color.apply(cc, comps);
   }
@@ -502,7 +608,7 @@ export default function () {
       return val;
     }
     if (val === null) return 'null';
-    switch(val.constructor.name) {
+    switch (val.constructor.name) {
       case 'Color':
       case 'Size':
       case 'Vec2':
@@ -529,7 +635,7 @@ export default function () {
     }
     if (!c && val && val.constructor) {
       raw = val.constructor.name;
-      switch(raw) {
+      switch (raw) {
         case 'Color':
           c = 'ElColorPicker'
           break;
@@ -540,11 +646,11 @@ export default function () {
           break;
       }
     }
-    return {raw, component: c};
+    return { raw, component: c };
   }
 
   function fromString(rawType, str) {
-    switch(rawType) {
+    switch (rawType) {
       case 'null':
       case 'undefined':
       case 'string':
@@ -565,21 +671,21 @@ export default function () {
     }
   }
 
-  function str2array (str) {
-    return str.replace(/[()]/,'').split(',').map(n => parseInt(n.trim(), 10));
+  function str2array(str) {
+    return str.replace(/[()]/, '').split(',').map(n => parseInt(n.trim(), 10));
   }
 
-  function str2size (str) {
+  function str2size(str) {
     const vec = str2array(str);
     return cc.size.apply(cc, vec);
   }
 
-  function str2vec (str) {
+  function str2vec(str) {
     const vec = str2array(str);
     return vec.length === 3 ? cc.v3.apply(cc, vec) : cc.v2.apply(cc, vec);
   }
 
-  function str2color (str) {
+  function str2color(str) {
     let c = hexToRgb(str);
     if (!c) {
       return cc.color(c.r, c.g, c.b, 255);
@@ -602,6 +708,6 @@ export default function () {
       cc.js.getset(n, prop, function () {
         return this._opacity;
       }, newSetter);
-    } catch (e) {}
+    } catch (e) { }
   }
 }

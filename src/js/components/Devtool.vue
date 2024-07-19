@@ -346,11 +346,12 @@ const app = {
     },
     shouldDispalyInputNumber (row) {
       return [
-        'x','y','width','height',
+        'x','y','z','width','height',
+        'angle',
         'zIndex','opacity',
         'anchorX','anchorY',
         'rotation', 'rotationX','rotationY',
-        'scale','scaleX','scaleY',
+        'scale','scaleX','scaleY','scaleZ',
         'skewX', 'skewY'].indexOf(row.key) >= 0;
     },
     shouldDisplayColorPicker (row) {
