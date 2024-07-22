@@ -88,6 +88,22 @@ export default function () {
     ]
   };
 
+  const CustomComponentProps = [  //自定义属性,基于组件原有内容扩展
+    {
+      component: 'cc.Sprite',
+      props: [
+        // {
+        //   keys: ['_spriteFrame', 'spriteFrame'],
+        //   get: (n) => n.spriteFrame,
+        // },
+        {
+          key: 'image',
+          get: (c) => c.spriteFrame ? c.spriteFrame.name : '',
+        }
+      ]
+    }
+  ]
+
   const ignoredComponentProp = [
     "_name",
     "_objFlags",
@@ -99,6 +115,13 @@ export default function () {
     "enabled",
     "enabledInHierarchy",
     "_isOnLoadCalled"
+  ];
+
+  const includeComponentProp = [  //强制需要显示的属性
+    // "_spriteFrame",
+    // "_sizeMode",
+    // "_font",
+    // "_texture"
   ];
 
   const DebugLayerCss = `
@@ -558,7 +581,7 @@ export default function () {
     const comps = n._components;
     return comps.reduce((result, comp, i) => {
       const props = comp.constructor.__props__.filter(prop => {
-        return ignoredComponentProp.indexOf(prop) < 0 && prop[0] != '_';
+        return ignoredComponentProp.indexOf(prop) < 0 && (prop[0] != '_' || includeComponentProp.indexOf(prop) >= 0);
       }).map(name => {
         const type = typeOf(comp[name]);
         const ret = { name, type: type.component, rawType: type.raw };
@@ -569,9 +592,36 @@ export default function () {
         }, true, true);
         return ret;
       });
+
+      let name = comp.constructor.name;
+      if (name && name.length <= 1) {
+        if (comp.__classname__ != null) {
+          name = comp.__classname__;
+        } else {
+          name = comp.name;
+        }
+      }
+
+      CustomComponentProps.forEach(v => {
+        if (v.component == name) {
+          v.props.forEach(v => {
+            const pname = v.key;
+            const type = typeOf(v.get(comp));
+            const ret = { name: pname, type: type.component, rawType: type.raw };
+            cc.js.getset(ret, 'value', () => {
+              return v.get(comp);
+            }, (str) => {
+              comp[pname] = fromString(type.rawType, str);
+            }, true, true);
+            props.push(ret);
+          });
+        }
+      });
+
+
       // console.log(props);
       result.push({
-        key: comp.constructor.name,
+        key: name,
         index: i,
         uuid: n.uuid,
         value: '<<inspect>>',
