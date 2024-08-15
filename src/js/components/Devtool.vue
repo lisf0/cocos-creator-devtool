@@ -77,7 +77,7 @@
                 tr.el-table__row(v-for="prop in comp.props")
                   td(v-text="prop.name")
                   td
-                    component(v-if="prop.type" :is="prop.type" :readonly="true" :disabled="true" :data-raw-type="prop.rawType" v-model="prop.value" size="mini")
+                    component(v-if="prop.type" :is="prop.type" :readonly="true" :data-raw-type="prop.rawType" v-model="prop.value" size="mini")
                     span(v-else-if="!prop.value") -
                     span(v-else v-text="prop.value")
 

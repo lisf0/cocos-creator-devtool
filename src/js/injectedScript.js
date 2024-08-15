@@ -75,13 +75,25 @@ export default function () {
       },
       {
         key: 'opacity',
-        get: (n) => n.getComponent("cc.UIRenderer") ? n.getComponent("cc.UIRenderer").color.a : 255,
+        get: (n) => {
+          const opcom = n.getComponent("cc.UIOpacity");
+          if (opcom) {
+            return opcom.opacity;
+          } else {
+            return n.getComponent("cc.UIRenderer") ? n.getComponent("cc.UIRenderer").color.a : 255
+          }
+        },
         set: (n, v) => {
-          let rander = n.getComponent("cc.UIRenderer");
-          if (rander) {
-            let color = rander.color.clone();
-            color.a = v;
-            rander.color = color;
+          const opcom = n.getComponent("cc.UIOpacity");
+          if (opcom) {
+            opcom.opacity = v;
+          } else {
+            let rander = n.getComponent("cc.UIRenderer");
+            if (rander) {
+              let color = rander.color.clone();
+              color.a = v;
+              rander.color = color;
+            }
           }
         }
       },
@@ -118,6 +130,32 @@ export default function () {
   ];
 
   const includeComponentProp = [  //强制需要显示的属性
+    //Layout ---- 
+    "_paddingBottom",
+    "_paddingLeft",
+    "_paddingRight",
+    "_paddingTop",
+    "_spacingX",
+    "_spacingY",
+    "_startAxis",
+    //Layout ---- 
+
+    //Label ----
+    "_string",
+    "_fontSize",
+    "_lineHeight",
+    "_fontFamily",
+    "_isSystemFontUsed",
+
+
+    //ParticleSystem ----
+    "_startColor",
+    "_startColorVar",
+    "_endColor",
+    "_endColorVar",
+    "_totalParticles",
+
+
     // "_spriteFrame",
     // "_sizeMode",
     // "_font",
@@ -483,7 +521,7 @@ export default function () {
     },
     onRotationChanged() {
       if (!(this instanceof cc.Node)) return;
-      const data = { uuid: this.uuid, rotationX: this.rotationX, rotationY: this.rotationY, rotation: this.rotation };
+      const data = { uuid: this.uuid, rotationX: this.eulerAngles.x, rotationY: this.eulerAngles.y, rotation: this.angle };
       ccdevtool.postMessage('rotation-changed', data);
     },
     onColorChanged() {
@@ -665,6 +703,13 @@ export default function () {
       case 'Vec3':
         return val.toString();
     }
+    switch (val.__classname__) {
+      case 'cc.Color':
+      case 'cc.Size':
+      case 'cc.Vec2':
+      case 'cc.Vec3':
+        return val.toString();
+    }
     if (val && val.constructor) return `<${val.constructor.name}>`;
     return '<unknown>';
   }
@@ -694,6 +739,18 @@ export default function () {
         case 'Size':
           c = 'ElInput';
           break;
+      }
+      if (!c) {
+        switch (val.__classname__) {
+          case 'cc.Color':
+            c = 'ElColorPicker'
+            break;
+          case 'cc.Size':
+          case 'cc.Vec2':
+          case 'cc.Vec3':
+            c = 'ElInput';
+            break;
+        }
       }
     }
     return { raw, component: c };
