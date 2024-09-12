@@ -234,6 +234,7 @@ const app = {
     }
     let lastMessage;
     function checkMessage(message) {
+      if(!message.data) return false;
       if (!lastMessage || !message.data.uuid) return true;
       if (message.type !== lastMessage.type) return true;
       for (var key in message.data) {

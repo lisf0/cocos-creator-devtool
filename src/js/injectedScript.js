@@ -111,8 +111,48 @@ export default function () {
         {
           key: 'image',
           get: (c) => c.spriteFrame ? c.spriteFrame.name : '',
+        },
+        {
+          key: 'inset[Left,Top,Right,Bottoom]',
+          get: (c) => c.spriteFrame ? c.spriteFrame._capInsets.toString() : ''
+        },
+        {
+          key: 'type',
+          get: (c) => cc.Sprite.Type[c._type]
+        },
+        {
+          key: 'size mode',
+          get: (c) => cc.Sprite.SizeMode[c._sizeMode]
+        }, {
+          key: 'Src Blend',
+          get: (c) => cc.Sprite.BlendState[c._srcBlendFactor]
+        }, {
+          key: 'Dst Blend',
+          get: (c) => cc.Sprite.BlendState[c._dstBlendFactor]
         }
       ]
+    },
+    {
+      component: 'cc.ParticleSystem2D',
+      props: [
+        {
+          key: 'file',
+          get: (c) => c.file ? c.file.name : '',
+        },
+        {
+          key: 'image',
+          get: (c) => c.spriteFrame ? c.spriteFrame.name : '',
+        },
+        {
+          key: 'Src Blend',
+          get: (c) => cc.Sprite.BlendState[c._srcBlendFactor]
+        },
+        {
+          key: 'Dst Blend',
+          get: (c) => cc.Sprite.BlendState[c._dstBlendFactor]
+        }
+      ]
+
     }
   ]
 
@@ -332,6 +372,20 @@ export default function () {
     selectNode(uuid) {
       window.$n1 = window.$n0
       window.$n0 = NodesCache[uuid];
+
+
+      for (let i = 0; i < 100; i++) {
+        if (window[`$c${i}`] != undefined) {
+          delete window[`$c${i}`];
+        }
+      }
+
+      if (window.$n0 && window.$n0.components) {
+        window.$n0.components.forEach((v, i) => {
+          window[`$c${i}`] = v;
+        })
+      }
+
 
       // const prevBoxes = document.querySelectorAll(`#${DebugLayerId} .debug-box.selected`);
       // if (prevBoxes.length) {
