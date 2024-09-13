@@ -151,8 +151,38 @@ export default function () {
           key: 'Dst Blend',
           get: (c) => cc.Sprite.BlendState[c._dstBlendFactor]
         }
+      ],
+    },
+    {
+      component: 'cc.Animation',
+      props: [
+        {
+          key: 'defaultClip',
+          get: (c) => c.defaultClip ? c.defaultClip.name : '',
+        },
+        {
+          key: 'clips',
+          get: (c) => c.clips ? c.clips.map(v => v.name).join(",") : '',
+        }
       ]
-
+    },
+    {
+      component: 'cc.Label',
+      props: [
+        {
+          key: 'font',
+          get: (c) => c.font ? c.font.name : '',
+        }
+      ]
+    },
+    {
+      component: 'cc.RichText',
+      props: [
+        {
+          key: 'font',
+          get: (c) => c.font ? c.font.name : '',
+        }
+      ]
     }
   ]
 
