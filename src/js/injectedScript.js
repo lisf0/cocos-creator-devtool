@@ -169,10 +169,55 @@ export default function () {
     {
       component: 'cc.Label',
       props: [
+
+        {
+          key: 'string',
+          get: (c) => c.string,
+        },
+        {
+          key: 'horizontalAlign',
+          get: (c) => c.horizontalAlign,
+        },
+        {
+          key: 'verticalAlign',
+          get: (c) => c.verticalAlign,
+        },
         {
           key: 'font',
           get: (c) => c.font ? c.font.name : '',
+        },
+        {
+          key: 'fontSize',
+          get: (c) => c.fontSize,
+        },
+        {
+          key: 'lineHeight',
+          get: (c) => c.lineHeight,
+        },
+        {
+          key: 'overflow',
+          get: (c) => c.overflow,
+        },
+        {
+          key: 'enableWrapText',
+          get: (c) => c.enableWrapText,
+        },
+        {
+          key: 'isSystemFontUsed',
+          get: (c) => c.isSystemFontUsed,
         }
+
+        // fontFamily: com.fontFamily,
+        // spacingX: com.spacingX,
+        // isBold: com.isBold,
+        // isItalic: com.isItalic,
+        // isUnderline: com.isUnderline,
+        // cacheMode: com.cacheMode,
+        // srcBlendFactor: com._srcBlendFactor,
+        // dstBlendFactor: com._dstBlendFactor
+
+
+
       ]
     },
     {
@@ -210,12 +255,12 @@ export default function () {
     "_startAxis",
     //Layout ---- 
 
-    //Label ----
-    "_string",
-    "_fontSize",
-    "_lineHeight",
-    "_fontFamily",
-    "_isSystemFontUsed",
+    // //Label ----
+    // "_string",
+    // "_fontSize",
+    // "_lineHeight",
+    // "_fontFamily",
+    // "_isSystemFontUsed",
 
 
     //ParticleSystem ----
@@ -498,17 +543,20 @@ export default function () {
     serialize: function (n, zIndex = 0) {
 
       const props = this.getProps();
-      const kv = props.reduce((result, ikey) => {
+
+      let kv = [];
+      if (props.length > 0) {
+        kv = props.reduce((result, ikey) => {
 
 
-        var key = ikey.key || ikey;
-        var value = typeof ikey == 'object' ? ikey.get(n) : n[ikey];
-        if (key === 'color') value = value.toCSS();
-        if (key === 'eulerAngles') value = value.toString()
-        result.push({ key, value });
-        return result;
-      }, []);
-
+          var key = ikey.key || ikey;
+          var value = typeof ikey == 'object' ? ikey.get(n) : n[ikey];
+          if (key === 'color') value = value.toCSS();
+          if (key === 'eulerAngles') value = value.toString()
+          result.push({ key, value });
+          return result;
+        }, []);
+      }
       // box for make debugging div box
       var box = null;
       if (n.parent) {
@@ -702,18 +750,22 @@ export default function () {
   function getComponentsData(n) {
     const comps = n._components;
     return comps.reduce((result, comp, i) => {
-      const props = comp.constructor.__props__.filter(prop => {
-        return ignoredComponentProp.indexOf(prop) < 0 && (prop[0] != '_' || includeComponentProp.indexOf(prop) >= 0);
-      }).map(name => {
-        const type = typeOf(comp[name]);
-        const ret = { name, type: type.component, rawType: type.raw };
-        cc.js.getset(ret, 'value', () => {
-          return valueOf(comp[name]);
-        }, (str) => {
-          comp[name] = fromString(type.rawType, str);
-        }, true, true);
-        return ret;
-      });
+
+      let props = [];
+      if (comp.constructor.__props__ && comp.constructor.__props__.length > 0) {
+        props = comp.constructor.__props__.filter(prop => {
+          return ignoredComponentProp.indexOf(prop) < 0 && (prop[0] != '_' || includeComponentProp.indexOf(prop) >= 0);
+        }).map(name => {
+          const type = typeOf(comp[name]);
+          const ret = { name, type: type.component, rawType: type.raw };
+          cc.js.getset(ret, 'value', () => {
+            return valueOf(comp[name]);
+          }, (str) => {
+            comp[name] = fromString(type.rawType, str);
+          }, true, true);
+          return ret;
+        });
+      }
 
       let name = comp.constructor.name;
       if (name && name.length <= 1) {
