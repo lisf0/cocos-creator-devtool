@@ -125,10 +125,22 @@ export default function () {
           get: (c) => cc.Sprite.SizeMode[c._sizeMode]
         }, {
           key: 'Src Blend',
-          get: (c) => cc.Sprite.BlendState[c._srcBlendFactor]
+          get: (c) => {
+            if (cc.Sprite.BlendState) {
+              return cc.Sprite.BlendState[c._srcBlendFactor]
+            } else {
+              return cc.macro.BlendFactor[c._srcBlendFactor]
+            }
+          }
         }, {
           key: 'Dst Blend',
-          get: (c) => cc.Sprite.BlendState[c._dstBlendFactor]
+          get: (c) => {
+            if (cc.Sprite.BlendState) {
+              return cc.Sprite.BlendState[c._dstBlendFactor]
+            } else {
+              return cc.macro.BlendFactor[c._dstBlendFactor]
+            }
+          }
         }
       ]
     },
@@ -162,7 +174,7 @@ export default function () {
         },
         {
           key: 'clips',
-          get: (c) => c.clips ? c.clips.map(v => v.name).join(",") : '',
+          get: (c) => c.clips ? c.clips.map(v => (v && v.name) || "null").join(",") : '',
         }
       ]
     },
@@ -226,6 +238,88 @@ export default function () {
         {
           key: 'font',
           get: (c) => c.font ? c.font.name : '',
+        }
+      ]
+    },
+    {
+      component: 'cc.Layout',
+      props: [
+        {
+          key: 'type',
+          get: (c) => cc.Layout.Type[c.type],
+        },
+        {
+          key: 'resizeMode',
+          get: (c) => cc.Layout.ResizeMode[c.resizeMode],
+        },
+        {
+          key: 'startAxis',
+          get: (c) => cc.Layout.AxisDirection[c.startAxis],
+        },
+        {
+          key: 'padding',
+          get: (c) => `left:${c.paddingLeft},right:${c.paddingRight},top:${c.paddingTop},bottom:${c.paddingBottom}`,
+        },
+        {
+          key: 'spacing',
+          get: (c) => `spacingX:${c.spacingX},spacingY:${c.spacingY}`,
+        },
+        {
+          key: 'verticalDirection',
+          get: (c) => cc.Layout.VerticalDirection[c.verticalDirection],
+        },
+        {
+          key: 'horizontalDirection',
+          get: (c) => cc.Layout.HorizontalDirection[c.horizontalDirection],
+        },
+        {
+          key: 'affectedByScale',
+          get: (c) => c.affectedByScale,
+        }
+      ]
+    },
+    {
+      component: 'cc.Widget',
+      props: [
+        {
+          key: 'Top',
+          get: (c) => `[${c.isAlignTop ? "√" : ""}] ${c.isAbsoluteTop ? c.top + "px" : (c.top * 100) + "%"}`,
+        },
+        {
+          key: 'Left',
+          get: (c) => `[${c.isAlignLeft ? "√" : ""}] ${c.isAbsoluteLeft ? c.left + "px" : (c.left * 100) + "%"}`,
+        },
+        {
+          key: 'Right',
+          get: (c) => `[${c.isAlignRight ? "√" : ""}] ${c.isAbsoluteRight ? c.right + "px" : (c.right * 100) + "%"}`,
+        },
+        {
+          key: 'Bottom',
+          get: (c) => `[${c.isAlignBottom ? "√" : ""}] ${c.isAbsoluteBottom ? c.bottom + "px" : (c.bottom * 100) + "%"}`,
+        },
+        {
+          key: 'Horizontal Center',
+          get: (c) => `[${c.isAlignHorizontalCenter ? "√" : ""}] ${c.isAbsoluteHorizontalCenter ? c.horizontalCenter + "px" : (c.horizontalCenter * 100) + "%"}`,
+        },
+        {
+          key: 'Vertical Center',
+          get: (c) => `[${c.isAlignVerticalCenter ? "√" : ""}] ${c.isAbsoluteVerticalCenter ? c.verticalCenter + "px" : (c.verticalCenter * 100) + "%"}`,
+        },
+        {
+          key: 'Target',
+          get: (c) => c.target ? c.target.name : "null",
+        }
+      ]
+    },
+    {
+      component: 'cc.Button',
+      props: [
+        {
+          key: 'clickEvents',
+          get: (c) => {
+            let events = c.clickEvents;
+            return events.map(v => (v.target && v.target.name) + ":" + v.handler + `(${v.customEventData})`).join(";");
+          }
         }
       ]
     }
@@ -299,14 +393,40 @@ export default function () {
 
     getProps() {
       let propkey = "default";
-      if (cc.ENGINE_VERSION >= '2.0.0') {
+
+      let version = cc.ENGINE_VERSION;
+      if (PG_Engine) {
+        version = `2.4`
+      }
+
+      if (version >= '2.0.0') {
         propkey = '2.0.0';
       }
-      if (cc.ENGINE_VERSION >= '3.0.0') {
+      if (version >= '3.0.0') {
         propkey = '3.x';
       }
 
       return SerializeProps[propkey];
+    },
+
+    getComponentsInChildren(com) {
+
+      let coms = cc.director.getScene().getComponentsInChildren(com);
+
+      let ret = coms.map((v, i) => {
+        return {
+          uuid: v.uuid,
+          name: v.name,
+          node: {
+            uuid: v.node.uuid,
+            name: v.node.name,
+          }
+        }
+      });
+
+      console.log(ret);
+
+      return ret;
     },
 
     /**
@@ -455,8 +575,9 @@ export default function () {
         }
       }
 
-      if (window.$n0 && window.$n0.components) {
-        window.$n0.components.forEach((v, i) => {
+      if (window.$n0 && (window.$n0.components || window.$n0._components)) {
+        const components = window.$n0.components || window.$n0._components;
+        components.forEach((v, i) => {
           window[`$c${i}`] = v;
         })
       }
@@ -759,7 +880,7 @@ export default function () {
           const type = typeOf(comp[name]);
           const ret = { name, type: type.component, rawType: type.raw };
           cc.js.getset(ret, 'value', () => {
-            return valueOf(comp[name]);
+            return valueOf(comp[name], comp);
           }, (str) => {
             comp[name] = fromString(type.rawType, str);
           }, true, true);
@@ -768,7 +889,7 @@ export default function () {
       }
 
       let name = comp.constructor.name;
-      if (name && name.length <= 1) {
+      if (name && name.length <= 1 || name == "CCClass") {
         if (comp.__classname__ != null) {
           name = comp.__classname__;
         } else {
@@ -800,6 +921,7 @@ export default function () {
         uuid: n.uuid,
         value: '<<inspect>>',
         props
+        // ref: comp
       })
       return result;
     }, [])
@@ -826,7 +948,21 @@ export default function () {
     return cc.color.apply(cc, comps);
   }
 
-  function valueOf(val) {
+  function getNodePath(node, root) {
+    let path = [];
+    if (cc.js.getClassName(node) != "cc.Node") {
+      node = node.node;
+    }
+
+    while (node != null && (node != root && node != root.node)) {
+      path.push(node.name);
+      node = node.parent;
+    }
+
+    return path.reverse().join("/");
+  }
+
+  function valueOf(val, comp) {
     const t = typeof val;
     if (t === 'undefined' || t === 'string' || t === 'number' || t === 'boolean') {
       return val;
@@ -838,6 +974,11 @@ export default function () {
       case 'Vec2':
       case 'Vec3':
         return val.toString();
+      // case 'CCClass':
+      //   // if (val.node != null) {
+      //   return val.name || val._name;
+      //   // }
+      //   break;
     }
     switch (val.__classname__) {
       case 'cc.Color':
@@ -845,7 +986,27 @@ export default function () {
       case 'cc.Vec2':
       case 'cc.Vec3':
         return val.toString();
+      // case 'CCClass':
+      //   // if (val.node != null) {
+      //   return val.name || val._name;
+      //   // }
+      //   break;
     }
+
+    let cname = cc.js.getClassName(val)
+    if (val.node || cname == "cc.Node") {
+      return getNodePath(val, comp || cc.director.getScene()) + `<${cname}>`;
+    }
+
+    if (val.name || val._name) {
+      return (val.name || val._name) + `<${cname}>`;
+    }
+
+    if (Array.isArray(val)) {
+      return `[${val.map(v => valueOf(v, comp)).join(', ')}]`;
+    }
+
+
     if (val && val.constructor) return `<${val.constructor.name}>`;
     return '<unknown>';
   }

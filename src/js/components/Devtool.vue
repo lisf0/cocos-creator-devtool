@@ -63,7 +63,7 @@
 
         h2 Components
         el-collapse(style="display:inline-block")
-          el-collapse-item(v-for="(comp, index) in nodeComps" v-if="nodeComps" :key="index" :title="comp.key" style="width:500px")
+          el-collapse-item(v-for="(comp, index) in nodeComps" v-if="nodeComps" :key="index" :title="comp.key" style="min-width: 500px;width:100%;")
             table.el-table.comp-table.el-table__body-wrapper.is-scrolling-none
               colgroup
                 col(width="200")
@@ -187,7 +187,7 @@ const app = {
     ElCollapse,
     ElCollapseItem
   },
-  data () {
+  data() {
     return {
       isShowDebugLayer: false,
       isShowFps: true,
@@ -197,15 +197,16 @@ const app = {
       nodeComps: [],
       filterText: '',
       LogImg,
-      inputNumberStep: 1
+      inputNumberStep: 1,
+      filterCacheChildren: [],
     }
   },
-  mounted () {
+  mounted() {
     if (localStorage.getItem('showTip') !== 'true') {
       Notification.info({
         duration: 0,
         message: 'Tip: You can use Cmd/Ctrl/Shift to alter step when click +/- buttons',
-        onClose () {
+        onClose() {
           localStorage.setItem('showTip', true)
         }
       })
@@ -234,7 +235,7 @@ const app = {
     }
     let lastMessage;
     function checkMessage(message) {
-      if(!message.data) return false;
+      if (!message.data) return false;
       if (!lastMessage || !message.data.uuid) return true;
       if (message.type !== lastMessage.type) return true;
       for (var key in message.data) {
@@ -261,21 +262,21 @@ const app = {
         case 'active-in-hierarchy-changed':
         case 'sibling-order-changed':
         case 'opacity-changed':
-          if (self.selectedNode && message.data.uuid ===  self.selectedNode.uuid) {
+          if (self.selectedNode && message.data.uuid === self.selectedNode.uuid) {
             setSelectedNodeProp(message.data);
           }
           break;
         case 'color-changed':
-          if (self.selectedNode && message.data.uuid ===  self.selectedNode.uuid) {
-              const color = message.data.color;
-              const r = color._val & 0x000000ff;
-              const g = (color._val & 0x0000ff00) >> 8;
-              const b = (color._val & 0x00ff0000) >> 16;
-              const a = (color._val & 0xff000000) >>> 24;
-              setSelectedNodeProp({
-                color: `rgba(${r},${g},${b},${a})`
-              });
-            }
+          if (self.selectedNode && message.data.uuid === self.selectedNode.uuid) {
+            const color = message.data.color;
+            const r = color._val & 0x000000ff;
+            const g = (color._val & 0x0000ff00) >> 8;
+            const b = (color._val & 0x00ff0000) >> 16;
+            const a = (color._val & 0xff000000) >>> 24;
+            setSelectedNodeProp({
+              color: `rgba(${r},${g},${b},${a})`
+            });
+          }
           break;
         case 'child-removed': {
           const found = findNode(self.treeNode[0], null, message.data.uuid);
@@ -300,26 +301,36 @@ const app = {
     this.init();
   },
   watch: {
-    filterText (val) {
+    filterText(val) {
+
+      if (val.startsWith('t\:')) {
+        let value = val.slice(2);
+        this.ccdevtool.getComponentsInChildren(value).then(children => {
+          this.filterCacheChildren = children;
+          this.$refs.tree.filter(val);
+        });
+        return;
+      }
+
       this.$refs.tree.filter(val);
     },
-    isShowDebugLayer (val) {
+    isShowDebugLayer(val) {
       this.ccdevtool.toggleElement('#cc-devtool-debug', val);
       if (val) this.ccdevtool.getTreeNodes();
     },
-    isShowFps (val) {
+    isShowFps(val) {
       this.ccdevtool.toggleElement('#fps', val);
       this.ccdevtool.toggleNode('PROFILER-NODE', val);
     },
-    hasEruda () {
+    hasEruda() {
       return this.ccdevtool.hasElement('.eruda-entry-btn');
     },
-    isShowErudaBtn (val) {
+    isShowErudaBtn(val) {
       this.ccdevtool.toggleElement('.eruda-entry-btn', val);
     }
   },
   methods: {
-    init () {
+    init() {
       this.injectScript().then(_ => this.loadTreeNodes());
     },
     eval(code) {
@@ -339,26 +350,26 @@ const app = {
     reload() {
       location.reload();
     },
-    shouldDisplayText (row) {
+    shouldDisplayText(row) {
       return ['uuid', 'name'].indexOf(row.key) >= 0;
     },
-    shouldDisplayCheckbox (row) {
+    shouldDisplayCheckbox(row) {
       return row.key === 'active'
     },
-    shouldDispalyInputNumber (row) {
+    shouldDispalyInputNumber(row) {
       return [
-        'x','y','z','width','height',
+        'x', 'y', 'z', 'width', 'height',
         'angle',
-        'zIndex','opacity',
-        'anchorX','anchorY',
-        'rotation', 'rotationX','rotationY',
-        'scale','scaleX','scaleY','scaleZ',
+        'zIndex', 'opacity',
+        'anchorX', 'anchorY',
+        'rotation', 'rotationX', 'rotationY',
+        'scale', 'scaleX', 'scaleY', 'scaleZ',
         'skewX', 'skewY'].indexOf(row.key) >= 0;
     },
-    shouldDisplayColorPicker (row) {
+    shouldDisplayColorPicker(row) {
       return row.key === 'color';
     },
-    loadTreeNodes () {
+    loadTreeNodes() {
       return this.ccdevtool.getTreeNodes().then(treeNode => {
         this.ccdevtool.createDebugLayer();
         if (!treeNode) {
@@ -377,24 +388,32 @@ const app = {
     compile() {
       this.ccdevtool.compile();
     },
-    filterNode (value, data) {
+    filterNode(value, data) {
       if (!value) return true;
+
+
+      if (value.startsWith('t\:')) {
+        value = value.slice(2);
+
+        return this.filterCacheChildren.find(v => data.uuid == v.node.uuid);
+      }
+
       return data.label.toLowerCase().indexOf(value) >= 0;
     },
-    onClickTreeNode (node) {
+    onClickTreeNode(node) {
       this.selectedNode = node;
       this.nodeProps = node.props;
       this.nodeComps = node.comps;
       this.ccdevtool.selectNode(node.uuid);
     },
-    onPropChange (row) {
+    onPropChange(row) {
       if (!this.selectedNode) return;
       this.ccdevtool.updateNode(this.selectedNode.uuid, row.key, row.value);
     },
-    onHidden () {
+    onHidden() {
       this.ccdevtool.hideDebugLayer();
     },
-    onMouseDown (e) {
+    onMouseDown(e) {
       var step = 1;
       if (e.metaKey || e.ctrlKey) {
         step = 10;
@@ -407,22 +426,22 @@ const app = {
       }
       this.inputNumberStep = step
     },
-    onMouseUp (e) {
+    onMouseUp(e) {
       this.inputNumberStep = 1;
     },
-    refreshTree () {
+    refreshTree() {
       this.loadTreeNodes();
     },
-    inspectNode () {
+    inspectNode() {
       if (this.selectedNode) this.ccdevtool.inspectNode(this.selectedNode.uuid)
     },
-    reloadScene () {
+    reloadScene() {
       this.ccdevtool.reloadScene()
     },
-    inspectComponent (row) {
+    inspectComponent(row) {
       this.ccdevtool.inspectComponent(row.uuid, row.index);
     },
-    injectScript () {
+    injectScript() {
       // inject ccdevtool
       const fn = injectedScript.toString();
       const js = `(${fn})();`
@@ -435,14 +454,14 @@ const app = {
           vm.ccdevtool = {};
           for (let name in ccdevtool) {
             vm.ccdevtool[name] = function (...args) {
-              args = JSON.stringify(args).slice(1,-1);
+              args = JSON.stringify(args).slice(1, -1);
               return vm.eval(`ccdevtool.${name}(${args})`);
             }
           }
         });
       };
 
-      return new Promise((rs,rj) => {
+      return new Promise((rs, rj) => {
         var timer = setInterval(() => {
           doEval();
           tryTimes -= 1;
