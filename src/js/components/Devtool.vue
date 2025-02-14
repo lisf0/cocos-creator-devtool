@@ -305,6 +305,10 @@ const app = {
 
       if (val.startsWith('t\:')) {
         let value = val.slice(2);
+        let eindex = value.indexOf('!');
+        if (eindex >= 0) {
+          value = value.slice(0, eindex);
+        }
         this.ccdevtool.getComponentsInChildren(value).then(children => {
           this.filterCacheChildren = children;
           this.$refs.tree.filter(val);
@@ -394,6 +398,14 @@ const app = {
 
       if (value.startsWith('t\:')) {
         value = value.slice(2);
+
+        let eindex = value.indexOf('!');
+        if (eindex >= 0) {
+          let svalue = value.slice(0, eindex);
+          // 排除
+          let sexclude = value.slice(eindex + 1);
+          return this.filterCacheChildren.find(v => data.uuid == v.node.uuid && !v.className.startsWith(sexclude));
+        }
 
         return this.filterCacheChildren.find(v => data.uuid == v.node.uuid);
       }

@@ -417,6 +417,7 @@ export default function () {
         return {
           uuid: v.uuid,
           name: v.name,
+          className: cc.js.getClassName(v),
           node: {
             uuid: v.node.uuid,
             name: v.node.name,
